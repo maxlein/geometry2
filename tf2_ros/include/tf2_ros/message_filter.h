@@ -425,6 +425,14 @@ public:
 
         messageDropped(front.event, filter_failure_reasons::Unknown);
 
+        if( front.event.getMessage() == nullptr)
+        {
+          RCLCPP_ERROR(
+            node_logging_->get_logger(),
+            "add(): message is null when dropping message!");
+          --message_count_;
+          return;
+        }
         messages_.pop_front();
         --message_count_;
       }
@@ -490,6 +498,7 @@ private:
   void transformReadyCallback(const tf2_ros::TransformStampedFuture& future, const uint64_t handle)
   {
     namespace mt = message_filters::message_traits;
+    std::unique_lock<std::mutex> lock(messages_mutex_);
 
     // find the message this request is associated with
     typename L_MessageInfo::iterator msg_it = messages_.begin();
@@ -552,7 +561,6 @@ private:
     }
 
     // We will be mutating messages now, require unique lock
-    std::unique_lock<std::mutex> lock(messages_mutex_);
     if (can_transform) {
       TF2_ROS_MESSAGEFILTER_DEBUG("Message ready in frame %s at time %.3f, count now %d",
         frame_id.c_str(), stamp.seconds(), message_count_ - 1);
@@ -675,6 +683,14 @@ private:
   {
     namespace mt = message_filters::message_traits;
     const MConstPtr & message = evt.getMessage();
+
+    if( message == nullptr )
+    {
+      RCLCPP_ERROR(
+        node_logging_->get_logger(),
+        "signalFailure(): message is null when dropping message!");
+      return;
+    }
     std::string frame_id = stripSlash(mt::FrameId<M>::value(*message));
     rclcpp::Time stamp = mt::TimeStamp<M>::value(*message);
     RCLCPP_INFO(
