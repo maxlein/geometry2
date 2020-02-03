@@ -328,6 +328,9 @@ public:
       return;
     }
 
+    // While we're using the reference keep a lock on the messages.
+    std::unique_lock<std::mutex> unique_lock(messages_mutex_);
+
     namespace mt = message_filters::message_traits;
     const MConstPtr & message = evt.getMessage();
     std::string frame_id = stripSlash(mt::FrameId<M>::value(*message));
@@ -411,9 +414,6 @@ public:
     } else {
       // If this message is about to push us past our queue size, erase the oldest message
       if (queue_size_ != 0 && message_count_ + 1 > queue_size_) {
-
-        // While we're using the reference keep a lock on the messages.
-        std::unique_lock<std::mutex> unique_lock(messages_mutex_);
 
         ++dropped_message_count_;
         const MessageInfo & front = messages_.front();
