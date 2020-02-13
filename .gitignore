@@ -1,3 +1,7 @@
 *~
 *.pyc
 \#*
+*.idea
+*cmake-build-debug
+*.fbl
+COLCON_IGNORE
